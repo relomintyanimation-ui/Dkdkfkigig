@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+    <title>ProHost — Professional Cloud Workspace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-bg: #f8fafc;
+            --surface: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --accent: #2563eb;
+            --accent-hover: #1d4ed8;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+            --success: #10b981;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--primary-bg); color: var(--text-main); overflow-x: hidden; }
+        .hidden { display: none !important; }
+
+        /* --- Smooth Animations --- */
+        .fade-in { animation: fadeIn 0.8s ease-out forwards; }
+        .slide-up { opacity: 0; transform: translateY(30px); animation: slideUp 0.6s ease-out forwards; }
+        .delay-1 { animation-delay: 0.1s; }
+        .delay-2 { animation-delay: 0.2s; }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- Login Section (Professional Background) --- */
+        #loginSection {
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            /* Premium Business Background with Dark Overlay */
+            background: linear-gradient(rgba(15, 23, 42, 0.75), rgba(15, 23, 42, 0.9)), 
+                        url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop') center/cover no-repeat;
+        }
+        .login-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 50px 40px;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            text-align: center;
+            max-width: 420px;
+            width: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        .login-card h1 { font-size: 28px; margin-bottom: 10px; color: var(--text-main); font-weight: 700; }
+        .login-card p { color: var(--text-muted); margin-bottom: 35px; font-size: 15px; }
+        
+        .btn-google {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            padding: 14px 20px;
+            border-radius: 8px;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            transition: all 0.3s ease;
+            color: var(--text-main);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .btn-google:hover { background: #f8fafc; transform: translateY(-2px); box-shadow: 0 6px 12px rgba(0,0,0,0.1); }
+        .btn-google svg { width: 22px; height: 22px; }
+
+        /* --- Dashboard Navbar --- */
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: 15px 40px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .logo { font-size: 22px; font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+        .user-profile { display: flex; align-items: center; gap: 15px; }
+        .user-profile img { width: 40px; height: 40px; border-radius: 50%; border: 2px solid #e2e8f0; object-fit: cover; }
+        .user-info { text-align: right; }
+        .user-name { font-weight: 600; font-size: 14px; }
+        .user-email { font-size: 12px; color: var(--text-muted); }
+        .btn-logout { background: transparent; border: 1px solid var(--border); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; transition: 0.2s; }
+        .btn-logout:hover { background: #fee2e2; color: var(--danger); border-color: #fca5a5; }
+
+        /* --- Dashboard Main --- */
+        .container { max-width: 1000px; margin: 50px auto; padding: 0 20px; }
+        
+        /* Upload Area */
+        .upload-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 50px;
+            text-align: center;
+            margin-bottom: 40px;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        .upload-card:hover { box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            border-radius: 12px;
+            padding: 60px 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f8fafc;
+        }
+        .upload-zone:hover { border-color: var(--accent); background: #eff6ff; transform: scale(1.01); }
+        .upload-zone i { font-size: 48px; color: var(--accent); margin-bottom: 20px; transition: transform 0.3s; }
+        .upload-zone:hover i { transform: translateY(-5px); }
+        .upload-zone h3 { font-size: 20px; font-weight: 600; margin-bottom: 10px; color: var(--text-main); }
+        .upload-zone p { color: var(--text-muted); font-size: 15px; }
+        
+        /* Notice for multiple files */
+        .multi-file-notice { margin-top: 15px; font-size: 13px; color: #fbbf24; background: #fffbeb; padding: 8px 15px; border-radius: 6px; display: inline-block; border: 1px solid #fef3c7; }
+        
+        #mainFileInput, #updateFileInput { display: none; }
+
+        /* Multi-Upload Progress Area */
+        #uploadQueueContainer { margin-top: 25px; }
+        .progress-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            animation: slideUp 0.3s ease-out forwards;
+        }
+        .progress-details { flex: 1; margin-right: 20px; text-align: left; }
+        .progress-header { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; font-weight: 600; color: var(--text-main); }
+        .progress-bar-bg { width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #60a5fa); width: 0%; transition: width 0.2s ease; }
+        .btn-cancel { background: #fee2e2; color: var(--danger); border: none; padding: 10px 20px; border-radius: 6px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-cancel:hover { background: #fecaca; }
+
+        /* History Table */
+        .history-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05);
+        }
+        .history-header { padding: 25px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; background: #f8fafc; }
+        .history-header h3 { font-size: 18px; font-weight: 600; color: var(--text-main); }
+        
+        .table-responsive { width: 100%; overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; text-align: left; }
+        th, td { padding: 18px 25px; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background: #f8fafc; font-weight: 600; color: var(--text-muted); text-transform: uppercase; font-size: 12px; letter-spacing: 0.5px; }
+        td { color: var(--text-main); font-weight: 500; vertical-align: middle; }
+        tr:hover td { background-color: #f8fafc; }
+        
+        .file-name-cell { display: flex; align-items: center; gap: 12px; }
+        .file-icon { color: var(--accent); font-size: 20px; }
+        .link-cell a { color: var(--accent); text-decoration: none; word-break: break-all; font-weight: 500; }
+        .link-cell a:hover { text-decoration: underline; color: var(--accent-hover); }
+        
+        .action-buttons { display: flex; gap: 10px; }
+        .btn-action { background: transparent; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--text-muted); transition: all 0.2s; }
+        .btn-action:hover { background: var(--primary-bg); color: var(--text-main); transform: translateY(-1px); }
+        .btn-action.update { color: var(--accent); border-color: #bfdbfe; background: #eff6ff; }
+        .btn-action.update:hover { background: #dbeafe; }
+        
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+        .empty-state i { font-size: 40px; margin-bottom: 15px; opacity: 0.3; color: var(--text-muted); }
+        .empty-state p { font-size: 16px; font-weight: 500; }
+    </style>
+</head>
+<body>
+
+    <div id="loginSection" class="fade-in">
+        <div class="login-card slide-up">
+            <h1>ProHost Workspace</h1>
+            <p>Secure authentication required</p>
+            <button class="btn-google" id="btnGoogleLogin">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                    <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                    <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                    <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                    <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+                </svg>
+                Continue with Google
+            </button>
+        </div>
+    </div>
+
+    <div id="appSection" class="hidden">
+        
+        <nav class="navbar slide-up">
+            <div class="logo"><i class="fas fa-cloud"></i> ProHost</div>
+            <div class="user-profile">
+                <div class="user-info">
+                    <div class="user-name" id="displayUserName">User Name</div>
+                    <div class="user-email" id="displayUserEmail">user@email.com</div>
+                </div>
+                <img id="displayUserPic" src="" alt="Profile">
+                <button class="btn-logout" id="btnLogout"><i class="fas fa-sign-out-alt"></i> Logout</button>
+            </div>
+        </nav>
+
+        <div class="container">
+            <div class="upload-card slide-up delay-1">
+                <div class="upload-zone" onclick="document.getElementById('mainFileInput').click()">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    <h3>Select multiple files or folders</h3>
+                    <p>High-speed secure transfer to your personal server</p>
+                    <div class="multi-file-notice">
+                        <i class="fas fa-info-circle"></i> You can select multiple files at once
+                    </div>
+                </div>
+                <input type="file" id="mainFileInput" multiple>
+                <input type="file" id="updateFileInput">
+
+                <div id="uploadQueueContainer"></div>
+            </div>
+
+            <div class="history-card slide-up delay-2">
+                <div class="history-header">
+                    <h3><i class="fas fa-history"></i> Upload History</h3>
+                </div>
+                <div class="table-responsive">
+                    <table id="historyTable">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Date</th>
+                                <th>Live Link</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="historyTableBody">
+                            </tbody>
+                    </table>
+                </div>
+                <div id="emptyHistory" class="empty-state">
+                    <i class="fas fa-folder-open"></i>
+                    <p>No files uploaded yet. Start by selecting files above.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // 1. FIREBASE SETUP (YAHAN APNI KEY DAALNA)
+        // ==========================================
+        const firebaseConfig = {
+  apiKey: "AIzaSyBC0vDGNBpMtWS-6WPgBL9fyOO0DzsomIE",
+  authDomain: "web-hosting-4449a.firebaseapp.com",
+  projectId: "web-hosting-4449a",
+  storageBucket: "web-hosting-4449a.firebasestorage.app",
+  messagingSenderId: "303626189363",
+  appId: "1:303626189363:web:2ee52d65e2d2047e060146",
+  measurementId: "G-R2Y58EMKE5"
+};
+
+        firebase.initializeApp(firebaseConfig);
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
+
+        // ==========================================
+        // 2. STATE VARIABLES
+        // ==========================================
+        let currentUser = null;
+        let activeUploads = {}; // Track multiple XHRs
+        let isUpdatingMode = false;
+        let updatingHistoryId = null;
+
+        // UI Elements
+        const loginSection = document.getElementById('loginSection');
+        const appSection = document.getElementById('appSection');
+        const uploadQueueContainer = document.getElementById('uploadQueueContainer');
+        
+        // ==========================================
+        // 3. AUTHENTICATION LOGIC
+        // ==========================================
+        document.getElementById('btnGoogleLogin').addEventListener('click', () => {
+            auth.signInWithPopup(provider).catch(error => alert(error.message));
+        });
+
+        document.getElementById('btnLogout').addEventListener('click', () => {
+            auth.signOut();
+        });
+
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                currentUser = user;
+                loginSection.classList.add('hidden');
+                appSection.classList.remove('hidden');
+                
+                document.getElementById('displayUserName').innerText = user.displayName;
+                document.getElementById('displayUserEmail').innerText = user.email;
+                document.getElementById('displayUserPic').src = user.photoURL;
+                
+                loadHistory(); 
+            } else {
+                currentUser = null;
+                loginSection.classList.remove('hidden');
+                appSection.classList.add('hidden');
+            }
+        });
+
+        // ==========================================
+        // 4. MULTI-UPLOAD LOGIC (PROFESSIONAL QUEUE)
+        // ==========================================
+        function processFiles(files) {
+            if (files.length === 0) return;
+            
+            // Loop through all selected files and start upload for each
+            Array.from(files).forEach((file, index) => {
+                const uploadId = 'upload_' + Date.now() + '_' + index;
+                createProgressUI(uploadId, file.name);
+                startSingleUpload(file, uploadId);
+            });
+            
+            // Reset input so same files can be selected again if needed
+            document.getElementById('mainFileInput').value = "";
+            document.getElementById('updateFileInput').value = "";
+        }
+
+        function createProgressUI(uploadId, fileName) {
+            const card = document.createElement('div');
+            card.className = 'progress-card';
+            card.id = `card_${uploadId}`;
+            
+            card.innerHTML = `
+                <div class="progress-details">
+                    <div class="progress-header">
+                        <span>${fileName}</span>
+                        <span id="percent_${uploadId}">0%</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" id="fill_${uploadId}"></div>
+                    </div>
+                </div>
+                <button class="btn-cancel" onclick="cancelUpload('${uploadId}')"><i class="fas fa-times"></i></button>
+            `;
+            uploadQueueContainer.appendChild(card);
+        }
+
+        function startSingleUpload(file, uploadId) {
+            const xhr = new XMLHttpRequest();
+            activeUploads[uploadId] = xhr;
+            
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const fillElement = document.getElementById(`fill_${uploadId}`);
+            const percentElement = document.getElementById(`percent_${uploadId}`);
+            const cardElement = document.getElementById(`card_${uploadId}`);
+
+            xhr.upload.addEventListener('progress', (e) => {
+                if (e.lengthComputable) {
+                    const percentComplete = Math.round((e.loaded / e.total) * 100);
+                    fillElement.style.width = percentComplete + '%';
+                    percentElement.innerText = percentComplete + '%';
+                }
+            });
+
+            xhr.addEventListener('load', () => {
+                if (xhr.status === 200) {
+                    const response = JSON.parse(xhr.responseText);
+                    if (response.success) {
+                        saveToHistory(file.name, response.link);
+                        // Make the progress bar green on success
+                        fillElement.style.background = 'linear-gradient(90deg, #10b981, #34d399)';
+                        setTimeout(() => cardElement.remove(), 2000); // Remove after 2 seconds
+                    } else {
+                        percentElement.innerText = "Failed";
+                        fillElement.style.background = 'var(--danger)';
+                    }
+                } else {
+                    percentElement.innerText = "Error";
+                    fillElement.style.background = 'var(--danger)';
+                }
+                delete activeUploads[uploadId];
+            });
+
+            xhr.addEventListener('abort', () => {
+                percentElement.innerText = "Stopped";
+                fillElement.style.background = 'var(--danger)';
+                setTimeout(() => cardElement.remove(), 2000);
+                delete activeUploads[uploadId];
+            });
+
+            xhr.addEventListener('error', () => {
+                percentElement.innerText = "Network Error";
+                fillElement.style.background = 'var(--danger)';
+                delete activeUploads[uploadId];
+            });
+
+            xhr.open('POST', '/upload', true);
+            xhr.send(formData);
+        }
+
+        window.cancelUpload = function(uploadId) {
+            if (activeUploads[uploadId]) {
+                activeUploads[uploadId].abort();
+            }
+        };
+
+        // File Selection Events
+        document.getElementById('mainFileInput').addEventListener('change', function(e) {
+            isUpdatingMode = false;
+            processFiles(e.target.files);
+        });
+
+        document.getElementById('updateFileInput').addEventListener('change', function(e) {
+            if(e.target.files.length > 0) {
+                // For update, we only process the first file
+                const file = e.target.files[0];
+                const uploadId = 'update_' + Date.now();
+                createProgressUI(uploadId, file.name);
+                startSingleUpload(file, uploadId);
+            }
+        });
+
+        // ==========================================
+        // 5. HISTORY MANAGEMENT
+        // ==========================================
+        function getHistoryKey() { return 'prohost_history_' + currentUser.uid; }
+
+        function loadHistory() {
+            const historyData = JSON.parse(localStorage.getItem(getHistoryKey())) || [];
+            const tbody = document.getElementById('historyTableBody');
+            const emptyState = document.getElementById('emptyHistory');
+            const table = document.getElementById('historyTable');
+
+            tbody.innerHTML = '';
+
+            if (historyData.length === 0) {
+                emptyState.classList.remove('hidden');
+                table.classList.add('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            table.classList.remove('hidden');
+
+            for (let i = historyData.length - 1; i >= 0; i--) {
+                const item = historyData[i];
+                const tr = document.createElement('tr');
+                tr.className = 'slide-up';
+                tr.style.animationDelay = `${(historyData.length - 1 - i) * 0.05}s`;
+                
+                tr.innerHTML = `
+                    <td>
+                        <div class="file-name-cell">
+                            <i class="fas fa-file-code file-icon"></i>
+                            ${item.fileName}
+                        </div>
+                    </td>
+                    <td>${item.date}</td>
+                    <td class="link-cell"><a href="${item.link}" target="_blank">${item.link}</a></td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-action update" onclick="triggerUpdate('${item.id}')" title="Update File">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                            <button class="btn-action" onclick="copyLink('${item.link}')" title="Copy Link">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            }
+        }
+
+        function saveToHistory(fileName, link) {
+            let historyData = JSON.parse(localStorage.getItem(getHistoryKey())) || [];
+            
+            if (isUpdatingMode && updatingHistoryId) {
+                const index = historyData.findIndex(item => item.id === updatingHistoryId);
+                if (index !== -1) {
+                    historyData[index].fileName = fileName;
+                    historyData[index].link = link;
+                    historyData[index].date = new Date().toLocaleDateString();
+                }
+                isUpdatingMode = false;
+                updatingHistoryId = null;
+            } else {
+                historyData.push({
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    fileName: fileName,
+                    link: link,
+                    date: new Date().toLocaleDateString()
+                });
+            }
+
+            localStorage.setItem(getHistoryKey(), JSON.stringify(historyData));
+            loadHistory();
+        }
+
+        window.triggerUpdate = function(id) {
+            isUpdatingMode = true;
+            updatingHistoryId = id;
+            document.getElementById('updateFileInput').click();
+        };
+
+        window.copyLink = function(link) {
+            navigator.clipboard.writeText(link).then(() => {
+                // Visual feedback that doesn't use standard alert for a pro feel
+                const btn = event.currentTarget;
+                const originalIcon = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check" style="color:var(--success)"></i>';
+                setTimeout(() => { btn.innerHTML = originalIcon; }, 1500);
+            });
+        };
+    </script>
+</body>
+</html>
